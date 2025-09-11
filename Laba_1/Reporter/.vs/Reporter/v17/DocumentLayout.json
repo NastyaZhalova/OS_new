@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_1_OC\\Reporter\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{455C0645-6A1B-4CD7-932D-E3341879F589}|Reporter\\Reporter.vcxproj|D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_1_OC\\Reporter\\Reporter\\Reporter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{455C0645-6A1B-4CD7-932D-E3341879F589}|Reporter\\Reporter.vcxproj|solutionrelative:Reporter\\Reporter.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Reporter.cpp",
+              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_1_OC\\Reporter\\Reporter\\Reporter.cpp",
+              "RelativeDocumentMoniker": "Reporter\\Reporter.cpp",
+              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_1_OC\\Reporter\\Reporter\\Reporter.cpp",
+              "RelativeToolTip": "Reporter\\Reporter.cpp",
+              "ViewState": "AQIAABUAAAAAAAAAAAAAACEAAAApAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-09-10T14:43:00.39Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
