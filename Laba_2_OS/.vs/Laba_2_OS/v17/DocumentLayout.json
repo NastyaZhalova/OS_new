@@ -1,9 +1,9 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_2_OS\\",
+  "WorkspaceRootPath": "C:\\Users\\\u041D\u0430\u0441\u0442\u044F\\OS_new\\Laba_2_OS\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{C18A77F1-21EC-4365-96D5-2034204CED0A}|Laba_2_OS\\Laba_2_OS.vcxproj|D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{C18A77F1-21EC-4365-96D5-2034204CED0A}|Laba_2_OS\\Laba_2_OS.vcxproj|C:\\Users\\\u041D\u0430\u0441\u0442\u044F\\OS_new\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{C18A77F1-21EC-4365-96D5-2034204CED0A}|Laba_2_OS\\Laba_2_OS.vcxproj|solutionrelative:Laba_2_OS\\Laba_2_OS.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
@@ -20,11 +20,11 @@
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Laba_2_OS.cpp",
-              "DocumentMoniker": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp",
+              "DocumentMoniker": "C:\\Users\\\u041D\u0430\u0441\u0442\u044F\\OS_new\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp",
               "RelativeDocumentMoniker": "Laba_2_OS\\Laba_2_OS.cpp",
-              "ToolTip": "D:\\\u041F\u0440\u043E\u0433\u04303\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp",
+              "ToolTip": "C:\\Users\\\u041D\u0430\u0441\u0442\u044F\\OS_new\\Laba_2_OS\\Laba_2_OS\\Laba_2_OS.cpp",
               "RelativeToolTip": "Laba_2_OS\\Laba_2_OS.cpp",
-              "ViewState": "AQIAACoAAAAAAAAAAAAswDoAAAAFAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAADoAAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-09-24T14:47:43.348Z",
               "EditorCaption": ""
