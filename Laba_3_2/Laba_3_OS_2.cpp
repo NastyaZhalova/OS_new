@@ -1,5 +1,4 @@
-﻿#include <windows.h>
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -7,11 +6,9 @@
 #include <chrono>
 #include <cstdlib>
 
-using namespace std;
-
 struct MarkerSync {
-    mutex mtx;
-    condition_variable cv;
+    std::mutex mtx;
+    std::condition_variable cv;
     bool resume = false;
     bool terminate = false;
 };
@@ -20,75 +17,96 @@ struct MarkerData {
     int id;
     int* array;
     int size;
-    HANDLE startEvent;
-    HANDLE doneEvent;
+    bool start = false;
+    bool done = false;
     MarkerSync* sync;
-    vector<int> markedIndices;
-    mutex arrayMutex;
+    std::vector<int> markedIndices;
+    std::mutex arrayMutex;
 };
 
-DWORD WINAPI MarkerThread(LPVOID param) {
-    MarkerData* data = (MarkerData*)param;
+int SafeInput(const std::string& prompt, int minValue, int maxValue) {
+    int value;
+    while (true) {
+        std::cout << prompt;
+        std::cin >> value;
+
+        if (!std::cin.good()) {
+            std::cin.clear();
+            std::cin.ignore(10000, '\n');
+            std::cout << "Input error. Please enter a number.\n";
+            continue;
+        }
+
+        if (value < minValue || value > maxValue) {
+            std::cout << "Value out of allowed range [" << minValue << ", " << maxValue << "]. Try again.\n";
+            continue;
+        }
+
+        std::cin.ignore(10000, '\n');
+        return value;
+    }
+}
+
+void MarkerThread(MarkerData* data) {
     srand(data->id);
 
-    WaitForSingleObject(data->startEvent, INFINITE);
+    // Wait for start signal
+    while (!data->start) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
 
     while (true) {
         int index = rand() % data->size;
 
         {
-            lock_guard<mutex> lock(data->arrayMutex);
+            std::lock_guard<std::mutex> lock(data->arrayMutex);
             if (data->array[index] == 0) {
-                this_thread::sleep_for(chrono::milliseconds(5));
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 data->array[index] = data->id;
                 data->markedIndices.push_back(index);
-                this_thread::sleep_for(chrono::milliseconds(5));
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 continue;
             }
         }
 
-        cout << "[Marker " << data->id << "] can't mark index " << index
-            << ", total marked: " << data->markedIndices.size() << endl;
+        std::cout << "[Marker " << data->id << "] can't mark index " << index
+            << ", total marked: " << data->markedIndices.size() << std::endl;
 
-        SetEvent(data->doneEvent);
+        data->done = true;
 
-        unique_lock<mutex> lock(data->sync->mtx);
+        std::unique_lock<std::mutex> lock(data->sync->mtx);
         data->sync->cv.wait(lock, [&] { return data->sync->resume || data->sync->terminate; });
 
         if (data->sync->terminate) {
-            lock_guard<mutex> lock(data->arrayMutex);
+            std::lock_guard<std::mutex> lock(data->arrayMutex);
             for (int idx : data->markedIndices) {
                 data->array[idx] = 0;
             }
-            return 0;
+            return;
         }
 
         data->sync->resume = false;
-        ResetEvent(data->doneEvent);
+        data->done = false;
     }
 }
 
 void PrintArray(int* arr, int size) {
-    cout << "Array: ";
+    std::cout << "Array: ";
     for (int i = 0; i < size; ++i) {
-        cout << arr[i] << " ";
+        std::cout << arr[i] << " ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 int main() {
-    int size, threadCount;
-    cout << "Enter array size: ";
-    cin >> size;
+    int size = SafeInput("Enter array size: ", 1, 1000000);
+    int threadCount = SafeInput("Enter number of marker threads: ", 1, size);
 
     int* array = new int[size]();
-    cout << "Enter number of marker threads: ";
-    cin >> threadCount;
-
-    vector<HANDLE> threads(threadCount);
-    vector<MarkerData> threadData(threadCount);
-    vector<MarkerSync*> syncs(threadCount);
-    vector<bool> active(threadCount, true);
+    std::vector<std::thread> threads(threadCount);
+    std::vector<MarkerData> threadData(threadCount);
+    std::vector<MarkerSync*> syncs(threadCount);
+    std::vector<bool> active(threadCount, true);
 
     for (int i = 0; i < threadCount; ++i) {
         syncs[i] = new MarkerSync();
@@ -96,43 +114,40 @@ int main() {
         threadData[i].array = array;
         threadData[i].size = size;
         threadData[i].sync = syncs[i];
-        threadData[i].startEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-        threadData[i].doneEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-        threads[i] = CreateThread(NULL, 0, MarkerThread, &threadData[i], 0, NULL);
+        threads[i] = std::thread(MarkerThread, &threadData[i]);
     }
 
     for (int i = 0; i < threadCount; ++i) {
-        SetEvent(threadData[i].startEvent);
+        threadData[i].start = true;
     }
 
     int remaining = threadCount;
     while (remaining > 0) {
-        vector<HANDLE> waitEvents;
+        // Wait for all active threads to reach done
         for (int i = 0; i < threadCount; ++i) {
-            if (active[i]) {
-                waitEvents.push_back(threadData[i].doneEvent);
+            while (active[i] && !threadData[i].done) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
-        }
-
-        if (!waitEvents.empty()) {
-            WaitForMultipleObjects(waitEvents.size(), waitEvents.data(), TRUE, INFINITE);
         }
 
         PrintArray(array, size);
 
-        int toStop;
-        cout << "Enter marker number to stop: ";
-        cin >> toStop;
+        int toStop = SafeInput("Enter marker number to stop: ", 1, threadCount);
         toStop--;
 
+        if (!active[toStop]) {
+            std::cout << "Marker " << (toStop + 1) << " is already stopped. Try another.\n";
+            continue;
+        }
+
         {
-            lock_guard<mutex> lock(syncs[toStop]->mtx);
+            std::lock_guard<std::mutex> lock(syncs[toStop]->mtx);
             syncs[toStop]->terminate = true;
         }
         syncs[toStop]->cv.notify_one();
 
-        WaitForSingleObject(threads[toStop], INFINITE);
+        threads[toStop].join();
         active[toStop] = false;
         remaining--;
 
@@ -141,7 +156,7 @@ int main() {
         for (int i = 0; i < threadCount; ++i) {
             if (active[i]) {
                 {
-                    lock_guard<mutex> lock(syncs[i]->mtx);
+                    std::lock_guard<std::mutex> lock(syncs[i]->mtx);
                     syncs[i]->resume = true;
                 }
                 syncs[i]->cv.notify_one();
@@ -151,6 +166,6 @@ int main() {
 
     delete[] array;
     for (auto s : syncs) delete s;
-    cout << "All marker threads finished." << endl;
+    std::cout << "All marker threads finished." << std::endl;
     return 0;
 }
