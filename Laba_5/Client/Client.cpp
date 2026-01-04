@@ -1,6 +1,7 @@
 ﻿#include <windows.h>
 #include <iostream>
 #include <string>
+#include <limits>
 
 struct employee {
     int    num;
@@ -25,7 +26,8 @@ struct ServerResponse {
 
 static const wchar_t* PIPE_NAME = L"\\\\.\\pipe\\EmpServer";
 
-bool sendRecv(HANDLE hPipe, const ClientRequest& req, ServerResponse& resp) {
+
+static bool sendRecv(HANDLE hPipe, const ClientRequest& req, ServerResponse& resp) {
     DWORD written = 0;
     if (!WriteFile(hPipe, &req, sizeof(req), &written, nullptr) || written != sizeof(req)) {
         std::cerr << "WriteFile failed, err=" << GetLastError() << "\n";
@@ -40,8 +42,8 @@ bool sendRecv(HANDLE hPipe, const ClientRequest& req, ServerResponse& resp) {
 }
 
 int main() {
-    // Подключение к серверу
     HANDLE hPipe = INVALID_HANDLE_VALUE;
+
     while (true) {
         hPipe = CreateFileW(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
         if (hPipe != INVALID_HANDLE_VALUE) break;
@@ -64,10 +66,14 @@ int main() {
     std::string cmd;
     while (true) {
         std::cout << "> ";
-        std::getline(std::cin, cmd);
+        if (!std::getline(std::cin, cmd)) break;
 
         if (cmd == "exit") {
-            ClientRequest req{ OP_EXIT, 0, {}, GetCurrentProcessId() };
+            ClientRequest req;
+            req.op = OP_EXIT;
+            req.num = 0;
+            req.data = employee{};
+            req.pid = GetCurrentProcessId();
             ServerResponse resp{};
             sendRecv(hPipe, req, resp);
             break;
@@ -75,10 +81,20 @@ int main() {
         else if (cmd == "read") {
             int key;
             std::cout << "ID: ";
-            std::cin >> key;
+            if (!(std::cin >> key)) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                std::cout << "Некорректный ID.\n";
+                continue;
+            }
             std::cin.ignore();
 
-            ClientRequest req{ OP_READ_START, key, {}, GetCurrentProcessId() };
+            ClientRequest req;
+            req.op = OP_READ_START;
+            req.num = key;
+            req.data = employee{};
+            req.pid = GetCurrentProcessId();
+
             ServerResponse resp{};
             if (!sendRecv(hPipe, req, resp)) continue;
 
@@ -90,40 +106,64 @@ int main() {
             else if (resp.status == ST_ERR_NOT_FOUND) {
                 std::cout << "Not found.\n";
             }
-            else {
+            else if (resp.status == ST_ERR_BUSY) {
                 std::cout << "Busy.\n";
+            }
+            else {
+                std::cout << "Protocol error.\n";
             }
         }
         else if (cmd == "mod") {
             int key;
             std::cout << "ID: ";
-            std::cin >> key;
+            if (!(std::cin >> key)) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                std::cout << "Некорректный ID.\n";
+                continue;
+            }
             std::cin.ignore();
 
-            ClientRequest req{ OP_WRITE_LOCK, key, {}, GetCurrentProcessId() };
+            ClientRequest req;
+            req.op = OP_WRITE_LOCK;
+            req.num = key;
+            req.data = employee{};
+            req.pid = GetCurrentProcessId();
+
             ServerResponse resp{};
             if (!sendRecv(hPipe, req, resp)) continue;
 
             if (resp.status != ST_OK) {
-                std::cout << "Lock failed (busy/not found).\n";
+                if (resp.status == ST_ERR_NOT_FOUND) std::cout << "Not found.\n";
+                else std::cout << "Lock failed (busy).\n";
                 continue;
             }
+
             std::cout << "Current: " << resp.data.num << " " << resp.data.name << " " << resp.data.hours << "\n";
 
             employee e = resp.data;
             std::string nm;
             std::cout << "New name: ";
-            std::cin >> nm;
-            std::cin.ignore();
+            if (!std::getline(std::cin, nm)) {
+                std::cout << "Некорректное имя.\n";
+                req.op = OP_WRITE_UNLOCK;
+                sendRecv(hPipe, req, resp);
+                continue;
+            }
 
-            // безопасное копирование имени без <cstring>
             for (size_t j = 0; j < sizeof(e.name); ++j) {
-                if (j < nm.size()) e.name[j] = nm[j];
-                else e.name[j] = '\0';
+                e.name[j] = (j < nm.size()) ? nm[j] : '\0';
             }
 
             std::cout << "New hours: ";
-            std::cin >> e.hours;
+            if (!(std::cin >> e.hours)) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                std::cout << "Некорректный ввод числа.\n";
+                req.op = OP_WRITE_UNLOCK;
+                sendRecv(hPipe, req, resp);
+                continue;
+            }
             std::cin.ignore();
 
             req.op = OP_WRITE_COMMIT;
